@@ -123,17 +123,17 @@ if arquivo_carregado:
 
                         if meses_para_projetar > 0:
                             try:
-                                # --- LÓGICA DE CORREÇÃO DO ERRO ---
-                                # Verifica se alguma das colunas é constante
+                                # LÓGICA DE CORREÇÃO DO ERRO
                                 is_constant = df_operacao.nunique().min() == 1
-                                # Se for constante, ajusta o modelo para não adicionar sua própria constante ('n' = no trend)
                                 trend_param = 'n' if is_constant else 'c'
                                 
-                                # Instancia o modelo com o parâmetro de tendência ajustado
-                                modelo = VAR(df_operacao, trend=trend_param)
-                                # ------------------------------------
+                                # --- CORREÇÃO APLICADA AQUI ---
+                                # O modelo é instanciado sem o 'trend'
+                                modelo = VAR(df_operacao)
+                                # O parâmetro 'trend' é passado no método .fit()
+                                resultado_modelo = modelo.fit(trend=trend_param)
+                                # ---------------------------------
 
-                                resultado_modelo = modelo.fit()
                                 projecao = resultado_modelo.forecast(df_operacao.values, steps=meses_para_projetar)
                                 valor_projetado = projecao[-1]
                                 fct_projetado = valor_projetado[1]
