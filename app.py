@@ -65,7 +65,6 @@ def carregar_e_preparar_dados_multivariado(arquivo_carregado):
         st.info("Por favor, verifique se o formato do arquivo Excel está correto (cabeçalhos como 'Janeiro 24').")
         return None, None
 
-# --- NOVA FUNÇÃO DE CONVERSÃO PARA EXCEL ---
 def convert_df_to_excel(df):
     """Converte um dataframe para um arquivo Excel em memória."""
     output = io.BytesIO()
@@ -124,7 +123,16 @@ if arquivo_carregado:
 
                         if meses_para_projetar > 0:
                             try:
-                                modelo = VAR(df_operacao)
+                                # --- LÓGICA DE CORREÇÃO DO ERRO ---
+                                # Verifica se alguma das colunas é constante
+                                is_constant = df_operacao.nunique().min() == 1
+                                # Se for constante, ajusta o modelo para não adicionar sua própria constante ('n' = no trend)
+                                trend_param = 'n' if is_constant else 'c'
+                                
+                                # Instancia o modelo com o parâmetro de tendência ajustado
+                                modelo = VAR(df_operacao, trend=trend_param)
+                                # ------------------------------------
+
                                 resultado_modelo = modelo.fit()
                                 projecao = resultado_modelo.forecast(df_operacao.values, steps=meses_para_projetar)
                                 valor_projetado = projecao[-1]
@@ -143,7 +151,6 @@ if arquivo_carregado:
                 df_resultados = pd.DataFrame(resultados_projecao)
                 st.dataframe(df_resultados, use_container_width=True, height=len(df_resultados)*36+38)
                 
-                # --- BOTÃO DE DOWNLOAD ATUALIZADO ---
                 excel_data = convert_df_to_excel(df_resultados)
                 st.download_button(
                    label="📥 Baixar Resultados em Excel",
